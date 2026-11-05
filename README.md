@@ -3,6 +3,9 @@
 Cruscotto di telemetria per Linux, C++20 / Qt 6, disegnato interamente a mano con
 `QPainter`: nessun widget di sistema, nessuna immagine, nessuna dipendenza oltre a Qt.
 
+Pagina: <https://cybernet.fun/monitor-sistema/> — la pagina pubblica è in `site/` qui dentro.
+Licenza MIT.
+
 ![Monitor di Sistema](screenshot.png)
 
 Una sola finestra, sette pannelli:

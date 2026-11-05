@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor di Sistema — cruscotto di telemetria per Linux (Qt 6)</title>
+<meta name="description" content="Cruscotto di telemetria per Linux in C++20 e Qt 6: CPU per core, memoria, temperature, rete, disco e processi. Disegnato a mano, si compila dal repo.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://cybernet.fun/monitor-sistema/">
+<meta name="theme-color" content="#06080a">
+<meta name="color-scheme" content="dark">
+<meta property="og:site_name" content="cybernet">
+<meta property="og:locale" content="it_IT">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Monitor di Sistema — cruscotto di telemetria per Linux (Qt 6)">
+<meta property="og:description" content="CPU per core, memoria, temperature con grafico, rete, disco e processi in una sola finestra. C++20 e Qt 6, tutto disegnato con QPainter.">
+<meta property="og:url" content="https://cybernet.fun/monitor-sistema/">
+<meta property="og:image" content="https://cybernet.fun/monitor-sistema/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Il cruscotto: pannelli del carico per core, memoria, temperature, rete, disco e processi su fondo blu notte">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Monitor di Sistema — cruscotto di telemetria per Linux (Qt 6)">
+<meta name="twitter:description" content="Sette pannelli dipinti a mano in Qt 6: CPU per core, memoria, temperature, rete, disco, processi. C++20, MIT, su GitHub.">
+<meta name="twitter:image" content="https://cybernet.fun/monitor-sistema/img/og.png">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://cybernet.fun/monitor-sistema/#app",
+      "name": "Monitor di Sistema",
+      "description": "Cruscotto di telemetria per Linux: carico per core, frequenza, memoria, swap, temperature con grafico, rete, disco, batteria e processi più pesanti. C++20 e Qt 6, disegnato a mano con QPainter.",
+      "url": "https://cybernet.fun/monitor-sistema/",
+      "applicationCategory": "UtilitiesApplication",
+      "applicationSubCategory": "Monitor di sistema",
+      "operatingSystem": "Linux",
+      "softwareVersion": "1.0.0",
+      "inLanguage": "it",
+      "isAccessibleForFree": true,
+      "license": "https://opensource.org/licenses/MIT",
+      "codeRepository": "https://github.com/4n-0n/monitor-sistema",
+      "screenshot": [
+        "https://cybernet.fun/monitor-sistema/img/hero.webp"
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "availability": "https://schema.org/InStock"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "@id": "https://cybernet.fun/#org",
+        "name": "cybernet",
+        "url": "https://cybernet.fun/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "cybernet", "item": "https://cybernet.fun/"},
+        {"@type": "ListItem", "position": 2, "name": "Monitor di Sistema", "item": "https://cybernet.fun/monitor-sistema/"}
+      ]
+    }
+  ]
+}
+</script>
+<style>
+  :root {
+    --bg:    #06080a;
+    --ink1:  #0b1013;
+    --ink2:  #0e1518;
+    --line:  #1a2b38;
+    --dim:   #7a96aa;
+    --ink:   #dceeff;
+    --neon:  #00a8ff;
+    --neon2: #0077bb;
+    --neon3: #004e7a;
+    --mono: "JetBrains Mono", "DejaVu Sans Mono", "Liberation Mono", ui-monospace,
+            Menlo, Consolas, monospace;
+    --max: 1080px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--neon); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+  /* ---- topbar ---- */
+  header.bar {
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #080d11, var(--bg));
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(6px);
+  }
+  .bar .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; height: 56px;
+  }
+  .bar .left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .back {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--dim);
+    padding-right: 14px; border-right: 1px solid var(--line);
+    transition: color .18s ease;
+  }
+  .back:hover { color: var(--neon); text-decoration: none; }
+  .back:focus-visible { outline: 1px solid var(--neon); outline-offset: 4px; }
+  .back svg { width: 11px; height: 11px; transition: transform .18s ease; }
+  .back:hover svg { transform: translateX(-2px); }
+  .brand { font-weight: 700; letter-spacing: .14em; font-size: 13px; }
+  .brand b { color: var(--neon); font-weight: 700; }
+  .bar .tag { font-size: 12px; color: var(--dim); letter-spacing: .08em; }
+  .bar .tag i { color: var(--neon); font-style: normal; }
+
+  /* ---- hero ---- */
+  .hero { padding: 64px 0 32px; }
+  .kicker {
+    font-size: 12px; letter-spacing: .22em; color: var(--neon);
+    text-transform: uppercase; margin: 0 0 18px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 46px); line-height: 1.15; margin: 0 0 18px;
+    letter-spacing: -.01em; font-weight: 700;
+  }
+  h1 span { color: var(--neon); }
+  .lede { color: #b7c9d6; max-width: 62ch; margin: 0 0 30px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 13px 20px; border: 1px solid var(--neon);
+    color: var(--bg); background: var(--neon);
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase;
+  }
+  .btn:hover { background: #33baff; border-color: #33baff; text-decoration: none; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.ghost:hover { border-color: var(--neon); color: var(--neon); background: transparent; }
+  .facts {
+    display: flex; flex-wrap: wrap; gap: 8px 22px;
+    margin: 26px 0 0; padding: 0; list-style: none;
+    font-size: 12px; color: var(--dim); letter-spacing: .04em;
+  }
+  .facts li::before { content: "▸ "; color: var(--neon3); }
+
+  /* ---- figure ---- */
+  figure { margin: 34px 0 0; }
+  figure img {
+    display: block; width: 100%; height: auto;
+    border: 1px solid var(--line); background: var(--ink1);
+  }
+  figcaption { font-size: 12px; color: var(--dim); margin-top: 10px; letter-spacing: .04em; }
+  .shots { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+  /* ---- sections ---- */
+  section { padding: 56px 0 8px; }
+  h2 {
+    font-size: 13px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--dim); font-weight: 700; margin: 0 0 26px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h3 { font-size: 15px; margin: 0 0 8px; color: var(--ink); }
+  p { margin: 0 0 16px; }
+
+  /* ---- cards ---- */
+  .grid { display: grid; gap: 16px; }
+  .grid.three { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .card {
+    position: relative; border: 1px solid var(--line);
+    background: var(--ink1); padding: 20px 22px;
+  }
+  .card::before, .card::after {
+    content: ""; position: absolute; width: 9px; height: 9px;
+    border-color: var(--neon); border-style: solid; border-width: 0;
+  }
+  .card::before { top: -1px; left: -1px; border-top-width: 1px; border-left-width: 1px; }
+  .card::after  { bottom: -1px; right: -1px; border-bottom-width: 1px; border-right-width: 1px; }
+  .card p { color: #9fb3c2; font-size: 13.5px; margin: 0; }
+  .card .num {
+    font-size: 11px; letter-spacing: .18em; color: var(--neon); margin-bottom: 10px;
+  }
+
+  /* ---- code ---- */
+  pre {
+    margin: 0 0 18px; padding: 16px 18px; overflow-x: auto;
+    background: #05090c; border: 1px solid var(--line);
+    border-left: 2px solid var(--neon);
+    font-size: 13px; line-height: 1.7; color: #cfdfe9;
+  }
+  pre .c { color: #5c7a8c; }
+  code { font-family: var(--mono); }
+  p code, td code, li code {
+    background: var(--ink2); border: 1px solid var(--line);
+    padding: 1px 5px; font-size: 12.5px; color: var(--ink);
+  }
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 0 0 8px; }
+  .steps > li { position: relative; padding-left: 40px; margin-bottom: 26px; }
+  .steps > li::before {
+    counter-increment: s; content: counter(s, decimal-leading-zero);
+    position: absolute; left: 0; top: 0;
+    font-size: 12px; color: var(--neon); border: 1px solid var(--neon3);
+    padding: 1px 5px; letter-spacing: .06em;
+  }
+  .steps h3 { margin-bottom: 10px; }
+
+  /* ---- table ---- */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); font-weight: 700; }
+  td:first-child { color: var(--ink); }
+  td.n { color: var(--neon); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  .note {
+    border: 1px solid var(--line); border-left: 2px solid var(--neon3);
+    background: #070c10; padding: 16px 20px; margin: 0 0 14px;
+    font-size: 13.5px; color: #9fb3c2;
+  }
+  .note b { color: var(--ink); }
+  .note.ai { border-left-color: var(--neon); background: #081018; }
+
+  footer {
+    margin-top: 64px; border-top: 1px solid var(--line);
+    padding: 26px 0 48px; font-size: 12px; color: var(--dim);
+    display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between;
+  }
+  footer .l a { color: var(--dim); }
+  footer .l a:hover { color: var(--neon); }
+
+  @media (max-width: 640px) {
+    body { font-size: 14px; }
+    .hero { padding-top: 40px; }
+    .bar .tag { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <div class="left">
+      <a class="back" href="/" title="torna a cybernet.fun">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+          <path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>cybernet</span>
+      </a>
+      <div class="brand">MONITOR<b>SISTEMA</b></div>
+    </div>
+    <div class="tag">v1.0.0 &nbsp;·&nbsp; <i>Qt 6</i> / C++20 &nbsp;·&nbsp; MIT &nbsp;·&nbsp; Linux</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <p class="kicker">Cruscotto di telemetria · Qt 6 Widgets · C++20 · MIT</p>
+    <h1>La macchina,<br><span>in un colpo d'occhio</span>.</h1>
+    <p class="lede">
+      Sette pannelli in una finestra sola: carico per ogni core, memoria e swap,
+      temperature con il grafico, rete, disco, batteria e i processi più pesanti.
+      Legge <code>/proc</code> e <code>/sys</code> e disegna tutto con <code>QPainter</code>:
+      nessun widget di sistema, nessuna immagine, nessun asset — solo Qt 6.
+      Il campionamento si regola: 5 volte al secondo per default, 25 con
+      <code>--interval 40</code>.
+    </p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/4n-0n/monitor-sistema">Codice su GitHub ↗</a>
+      <a class="btn ghost" href="#compila">Come si compila</a>
+      <a class="btn ghost" href="#sorgenti">Cosa legge</a>
+    </div>
+    <ul class="facts">
+      <li>7 pannelli, una finestra</li>
+      <li>5 Hz di default · 25 Hz con <code>--interval 40</code></li>
+      <li>grafici scorrevoli, finestra regolabile</li>
+      <li>paint 3–5 ms per frame</li>
+      <li>nessuna dipendenza oltre a Qt 6</li>
+      <li><code>ctest</code>: 2 suite con fixture di <code>/proc</code></li>
+    </ul>
+  </div>
+
+  <figure>
+    <img src="img/hero.webp" fetchpriority="high" width="1140" height="730"
+         alt="Il cruscotto di Monitor di Sistema: carico del processore con 20 barre per core, memoria con donut e barre RAM/SWAP/batteria, temperature, rete, disco e la tabella dei processi più pesanti.">
+    <figcaption>
+      Il cruscotto in modalità <code>--demo</code> (dati sintetici, nessuna lettura di
+      <code>/proc</code>): serve a far vedere i grafici pieni e i pannelli con valori
+      realistici; i numeri veri si vedono all'avvio nella propria macchina.
+    </figcaption>
+  </figure>
+
+  <section id="dentro">
+    <h2>Cosa c'è dentro</h2>
+    <div class="grid three">
+      <article class="card">
+        <div class="num">01 / PROCESSORE</div>
+        <h3>Una barra per core</h3>
+        <p>Percentuale totale, una barra per ogni core (20 su questa macchina), frequenza
+           media, carico 1/5/15 e pressione CPU da <code>/proc/pressure/cpu</code>. Sotto il
+           80 % è ciano, sopra diventa ambra e poi rosso: si legge da lontano.</p>
+      </article>
+      <article class="card">
+        <div class="num">02 / MEMORIA</div>
+        <h3>Donut e barre</h3>
+        <p>RAM usata con <code>MemAvailable</code> (non <code>MemFree</code>, che racconta
+           un'altra storia), swap e batteria, con i valori assoluti accanto alla percentuale.</p>
+      </article>
+      <article class="card">
+        <div class="num">03 / GRAFICI</div>
+        <h3>Auto-scala, non 0–100</h3>
+        <p>Una macchina che vive tra 76 e 96 °C su una scala fissa sembra una riga piatta:
+           i grafici si normalizzano su min–max della finestra e scrivono il range vero
+           accanto al valore. L'asse del tempo è ancorato a destra e parte corto.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="sorgenti">
+    <h2>Cosa legge, e dove si sbaglia</h2>
+    <p>
+      Niente demoni, niente librerie: solo i file che il kernel espone. Il sampler accetta
+      una radice finta di <code>/proc</code> e <code>/sys</code>, quindi i test girano su
+      una fixture e non sulla macchina che li esegue.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Dato</th><th>Sorgente</th><th>Trappola</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>CPU, per core</td><td><code>/proc/stat</code></td><td>servono due campioni; il primo non ha delta</td></tr>
+        <tr><td>memoria</td><td><code>/proc/meminfo</code></td><td><code>MemAvailable</code>, mai <code>MemFree</code></td></tr>
+        <tr><td>rete</td><td><code>/proc/net/dev</code></td><td><code>lo</code>, <code>docker*</code>, <code>veth*</code>, <code>br-*</code>… contano due volte</td></tr>
+        <tr><td>disco</td><td><code>/proc/diskstats</code></td><td>solo dischi interi: le partizioni raddoppiano i byte</td></tr>
+        <tr><td>temperature</td><td><code>/sys/class/hwmon</code></td><td>milli-°C, etichetta per sensore</td></tr>
+        <tr><td>processi</td><td><code>/proc/&lt;pid&gt;/stat</code></td><td><code>comm</code> può contenere parentesi: si taglia all'ultima <code>)</code></td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <b>I file di <code>/proc</code> hanno <code>st_size</code> 0.</b> Con <code>QTextStream</code>
+      <code>atEnd()</code> diventa vero al primo giro e i pannelli restano vuoti senza un errore:
+      si legge con <code>readAll()</code>. È il bug che sembra «alcuni pannelli non funzionano».
+    </div>
+  </section>
+
+  <section id="misure">
+    <h2>Campionare tanto, disegnare il giusto</h2>
+    <p>
+      A 25 Hz il primo tentativo costava il 30 % di un core, quasi tutto in ridisegno.
+      Adesso campionamento e disegno sono separati: il timer campiona all'intervallo scelto,
+      il ridisegno avviene al massimo ogni 100 ms, la scansione dei processi una volta al
+      secondo (con la lista riusata fra un giro e l'altro).
+    </p>
+<pre><span class="c"># 25 campioni al secondo nei grafici, ~10 ridisegni al secondo</span>
+./monitor-sistema --interval 40 --window 60
+
+<span class="c"># e con la diagnostica del disegno</span>
+MON_PAINT_BENCH=1 ./monitor-sistema --interval 40
+paint: 4.65 ms/frame, 150 frame, 23.2 campioni/s</pre>
+    <p style="color:#9fb3c2;font-size:13.5px">
+      Il paint è sceso da 12,65 a 3,3–5,2 ms per frame: fondo in una <code>QPixmap</code>
+      ricostruita al resize, niente gradienti ricalcolati a ogni frame, antialiasing solo su
+      testo e linee, decimazione min/max delle serie lunghe (i picchi restano), font in cache.
+    </p>
+    <div class="note">
+      <b>Verificato, non stimato.</b> Su questo portatile a 20 core, 1280×820 a scala 1,4×:
+      <b>12,8 % di un core</b> a 25 Hz, <b>~4 %</b> a 5 Hz. La velocità di scorrimento è
+      larghezza diviso finestra temporale, quindi si regola con <code>--window</code>
+      (60 s di default, 30 s per farlo correre).
+    </div>
+  </section>
+
+  <section id="compila">
+    <h2>Compilarlo</h2>
+    <ol class="steps">
+      <li>
+        <h3>Dipendenze</h3>
+        <p>Qt 6 (Core, Gui, Widgets, Test) e un compilatore C++20. Su Ubuntu:
+           <code>sudo apt install build-essential cmake qt6-base-dev</code>.</p>
+      </li>
+      <li>
+        <h3>Build e test</h3>
+<pre>cmake -B build -S .
+cmake --build build -j"$(nproc)"
+ctest --test-dir build --output-on-failure</pre>
+      </li>
+      <li>
+        <h3>Avvio, e installazione utente</h3>
+<pre>./build/monitor-sistema
+
+<span class="c"># binario + icona + voce di menu «Monitor di Sistema (cruscotto)»</span>
+cmake --install build --prefix ~/.local</pre>
+        <p>Non ci sono pacchetti da scaricare: è un programma da compilare, e in cambio
+           non porta con sé niente che il sistema non abbia già.</p>
+      </li>
+    </ol>
+    <div class="note ai">
+      <b>Anche senza schermo.</b> <code>--once</code> e <code>--json</code> costruiscono un
+      <code>QCoreApplication</code>, non una <code>QApplication</code>: funzionano su SSH,
+      cron e CI. <code>--demo</code> genera dati sintetici deterministici,
+      <code>--capture</code> salva un PNG della finestra.
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <div class="l">
+    <a href="https://github.com/4n-0n/monitor-sistema">sorgente su GitHub</a> ·
+    <a href="https://github.com/4n-0n/monitor-sistema/blob/main/LICENSE">MIT</a> ·
+    <a href="/">cybernet.fun</a>
+  </div>
+  <div>Monitor di Sistema 1.0.0 — C++20 / Qt 6</div>
+</footer>
+
+<script src="/assets/px.js" defer></script>
+
+</body>
+</html>
