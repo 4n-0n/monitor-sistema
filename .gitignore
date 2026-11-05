@@ -1,0 +1,19 @@
+# build
+build/
+build-*/
+*.o
+*.a
+*.so
+moc_*
+qrc_*
+ui_*
+CMakeCache.txt
+CMakeFiles/
+Testing/
+*.user
+
+# editor / sistema
+.vscode/
+.idea/
+*.swp
+.DS_Store

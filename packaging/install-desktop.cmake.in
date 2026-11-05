@@ -1,0 +1,21 @@
+# Installazione del file .desktop con Exec assoluto: il PATH di plasmashell
+# non contiene ~/.local/bin, quindi "Exec=monitor-sistema" fallirebbe al click.
+# Nota: il segnaposto non deve avere la forma @NOME@, che configure_file(@ONLY)
+# sostituirebbe subito con una stringa vuota.
+set(_desktop_dir "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/share/applications")
+set(_exec_path "${CMAKE_INSTALL_PREFIX}/bin/monitor-sistema")
+file(MAKE_DIRECTORY "${_desktop_dir}")
+
+set(_desktop "[Desktop Entry]\n\
+Type=Application\n\
+Name=Monitor di Sistema (cruscotto)\n\
+GenericName=Monitor di sistema\n\
+Comment=CPU, memoria, temperature, rete, disco e processi in un solo cruscotto\n\
+Exec=EXEC_PATH_PLACEHOLDER\n\
+Icon=monitor-sistema\n\
+Terminal=false\n\
+Categories=System;Monitor;\n\
+Keywords=cpu;ram;memoria;temperatura;rete;disco;processi;cruscotto;monitor;\n\
+StartupWMClass=monitor-sistema\n")
+string(REPLACE "EXEC_PATH_PLACEHOLDER" "${_exec_path}" _desktop "${_desktop}")
+file(WRITE "${_desktop_dir}/monitor-sistema.desktop" "${_desktop}")

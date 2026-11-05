@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101c2e"/>
+      <stop offset="1" stop-color="#060a11"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#38d6ff"/>
+      <stop offset="1" stop-color="#45e0a0"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="88" fill="url(#bg)" stroke="#1d2c42" stroke-width="6"/>
+  <g stroke="#38d6ff" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.95">
+    <path d="M96 148 H160"/>
+    <path d="M96 96 V148"/>
+    <path d="M352 96 H416 V148"/>
+  </g>
+  <g stroke="#38d6ff" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.35">
+    <path d="M96 364 V416 H160"/>
+    <path d="M416 364 V416 H352"/>
+  </g>
+  <rect x="152" y="188" width="208" height="136" rx="18" fill="none" stroke="#2b425f" stroke-width="8"/>
+  <path d="M176 300 L216 300 L238 236 L264 316 L288 258 L308 300 L336 300"
+        fill="none" stroke="url(#wave)" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/>
+  <g fill="#45e0a0">
+    <rect x="188" y="352" width="26" height="42" rx="6" opacity="0.55"/>
+    <rect x="228" y="336" width="26" height="58" rx="6" opacity="0.7"/>
+    <rect x="268" y="318" width="26" height="76" rx="6" opacity="0.85"/>
+    <rect x="308" y="344" width="26" height="50" rx="6" opacity="0.65"/>
+  </g>
+</svg>
